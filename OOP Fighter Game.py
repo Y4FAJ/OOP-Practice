@@ -1,10 +1,12 @@
 import random
 class Fighter():
-    def __init__(self,name,health,attack_power):
+    def __init__(self,name,health,attack_power,burn_turns,curse_turns,petrified):
         self.name = name
         self.health = health
         self.attack_power = attack_power
-    
+        self.burn_turns = burn_turns
+        self.curse_turns = curse_turns
+        self.petrified = petrified    
     def show_stats(self):
         print("\n",self.name + " " + "| HP:" + " " + str(self.health) + " " + "| Attack:" + " " + str(self.attack_power))
         
@@ -16,53 +18,143 @@ class Fighter():
         print(self.name, "has healed by", healed)    
 
 class Swordsman(Fighter):
-    def __init__(self, name, health, attack_power):
-        super().__init__(name, health, attack_power)
+    def __init__(self,name,health,attack_power,burn_turns,curse_turns,petrified):
+        super().__init__(name,health,attack_power,burn_turns,curse_turns,petrified)
     
-    def attack(self,enemy):
-        hits = random.randrange(1,3)
-        enemy.health = enemy.health - (self.attack_power*hits)
-        print(self.name, "slashed", enemy.name, hits, "times")
+    def attack(self,enemy): 
+        if self.petrified > 0: #Character attacking already has petrified status
+            chance = random.randrange(1,3)
+            if chance == 2: # prob of 1/3 of not attacking
+                print(self.name, "couldn't attack due to being petrified!")
+            else:
+                hits = random.randrange(1,3)
+                enemy.health = enemy.health - (self.attack_power*hits)
+                print(self.name, "slashed", enemy.name, hits, "times")
+        elif self.petrified == 0:
+            hits = random.randrange(1,3)
+            enemy.health = enemy.health - (self.attack_power*hits)
+            print(self.name, "slashed", enemy.name, hits, "times")
+        
+        if enemy.burn_turns > 0:
+            enemy.health = enemy.health - 4 
+            enemy.burn_turns = enemy.burn_turns - 1
+            print (enemy.name, "lost an extra 4 health due to being burned. Turns remaining:", enemy.burn_turns)
+        if enemy.curse_turns > 0:
+            enemy.health = enemy.health - 3
+            enemy.curse_turns = enemy.curse_turns - 1
+            print (enemy.name, "lost an extra 3 health due to being cursed. Turns remaining:", enemy.curse_turns)
         if enemy.health <= 0:
-            enemy.health = 0
-            print(enemy.name,"is defeated!")
+                enemy.health = 0
+                print(enemy.name,"is defeated!")
+
 
 class Mage(Fighter):
-    def __init__(self, name, health, attack_power):
-        super().__init__(name, health, attack_power)
+    def __init__(self,name,health,attack_power,burn_turns,curse_turns,petrified):
+        super().__init__(name,health,attack_power,burn_turns,curse_turns,petrified)
 
-    def attack(self,enemy):
-        enemy.health = enemy.health - self.attack_power
-        print(self.name, "used the unique spell Megiddo on", enemy.name)
+    def attack(self,enemy): #rimuru's attack
+        if self.petrified > 0: #Character attacking already has petrified status
+            chance = random.randrange(1,3)
+            if chance == 2: # prob of 1/3 of not attacking
+                print(self.name, "couldn't attack due to being petrified!")
+            else:
+                enemy.health = enemy.health - self.attack_power
+                print(self.name, "used the unique spell Megiddo on", enemy.name)
+                if enemy.curse_turns == 0:
+                    amount = random.randrange(0,4)
+                    if amount > 0:
+                        enemy.cursed_turns = amount
+                        print(enemy.name, "is now cursed for", amount,"turns")
+        elif self.petrified == 0:
+            enemy.health = enemy.health - self.attack_power
+            print(self.name, "used the unique spell Megiddo on", enemy.name)
+            if enemy.curse_turns == 0:
+                amount = random.randrange(0,4)
+                if amount > 0:
+                    enemy.cursed_turns = amount
+                    print(enemy.name, "is now cursed for", amount,"turns")
+        if enemy.burn_turns > 0:
+            enemy.health = enemy.health - 4 
+            enemy.burn_turns = enemy.burn_turns - 1
+            print (enemy.name, "lost an extra 4 health due to being burned. Turns remaining:", enemy.burn_turns)
+        if enemy.curse_turns > 0:
+            enemy.health = enemy.health - 3
+            enemy.curse_turns = enemy.curse_turns - 1
+            print (enemy.name, "lost an extra 3 health due to being cursed. Turns remaining:", enemy.curse_turns)
         if enemy.health <= 0:
-            enemy.health = 0
-            print(enemy.name,"is defeated!")
+                enemy.health = 0
+                print(enemy.name,"is defeated!")
 
+
+    
+    #Senku specific attack - can't be petrified himself therefore
     def petrify(self,enemy):
         enemy.health = enemy.health - self.attack_power
-        print(self.name, "spoke 1 meter, 1 second into the petrification device and threw it at", enemy.name, "petrifying them for a split second")
+        print(self.name, "spoke 1 meter, 1 second into the petrification device and threw it at", enemy.name)
+        if enemy.petrified == 0:
+            amount =  random.randrange(0,3)
+            if amount > 0:
+                enemy.petrifried = amount
+                print(enemy.name, "is partially petrified for", amount, "turns!")
+        if enemy.burn_turns > 0:
+            enemy.health = enemy.health - 4 
+            enemy.burn_turns = enemy.burn_turns - 1
+            print (enemy.name, "lost an extra 4 health due to being burned. Turns remaining:", enemy.burn_turns)
+        if enemy.curse_turns > 0:
+            enemy.health = enemy.health - 3
+            enemy.curse_turns = enemy.curse_turns - 1
+            print (enemy.name, "lost an extra 3 health due to being cursed. Turns remaining:", enemy.curse_turns)
         if enemy.health <= 0:
-            enemy.health = 0
-            print(enemy.name,"is defeated!")
+                enemy.health = 0
+                print(enemy.name,"is defeated!")
+
+
 
 class Brawler(Fighter):
-    def __init__(self, name, health, attack_power):
-        super().__init__(name, health, attack_power)
+    def __init__(self,name,health,attack_power,burn_turns,curse_turns,petrified):
+        super().__init__(name,health,attack_power,burn_turns,curse_turns,petrified)
     
     def attack(self,enemy):
-        enemy.health = enemy.health - self.attack_power
-        print(self.name, "used the attack Red Hawk on", enemy.name)
+        if self.petrified > 0: #Character attacking already has petrified status
+            chance = random.randrange(1,3)
+            if chance == 2: # prob of 1/3 of not attacking
+                print(self.name, "couldn't attack due to being petrified!")
+            else:        
+                enemy.health = enemy.health - self.attack_power
+                print(self.name, "used the attack Red Hawk on", enemy.name)
+                if enemy.burn_turns == 0:
+                    amount = random.randrange(0,3)
+                    if amount > 0:
+                        enemy.burn_turns = amount
+                        print(enemy.name, "is now burned for", amount, "turns!")
+        elif self.petrified == 0:
+            enemy.health = enemy.health - self.attack_power
+            print(self.name, "used the attack Red Hawk on", enemy.name)
+            if enemy.burn_turns == 0:
+                amount = random.randrange(0,3)
+                if amount > 0:
+                    enemy.burn_turns = amount
+                    print(enemy.name, "is now burned for", amount, "turns!")
+        if enemy.burn_turns > 0:
+            enemy.health = enemy.health - 4 
+            enemy.burn_turns = enemy.burn_turns - 1
+            print (enemy.name, "lost an extra 4 health due to being burned. Turns remaining:", enemy.burn_turns)
+        if enemy.curse_turns > 0:
+            enemy.health = enemy.health - 3
+            enemy.curse_turns = enemy.curse_turns - 1
+            print (enemy.name, "lost an extra 3 health due to being cursed. Turns remaining:", enemy.curse_turns)
         if enemy.health <= 0:
-            enemy.health = 0
-            print(enemy.name,"is defeated!")
+                enemy.health = 0
+                print(enemy.name,"is defeated!")
+
 
 
 run = True
-luffy = Brawler("Luffy",100,35) 
-senku = Mage("Senku",100,25)  
-asta = Swordsman("Asta",100,22) 
-thorfinn = Swordsman("Thorfinn",100,20) 
-rimuru = Mage("Rimuru",100,36)
+luffy = Brawler("Luffy",100,35,0,0,0) 
+senku = Mage("Senku",100,25,0,0,0)  
+asta = Swordsman("Asta",100,22,0,0,0) 
+thorfinn = Swordsman("Thorfinn",100,20,0,0,0) 
+rimuru = Mage("Rimuru",100,36,0,0,0)
 
 catalog = [luffy,senku,asta,thorfinn,rimuru]
 characters = {         #character dictionary
@@ -89,7 +181,7 @@ while run:
         elif fight == "heal":
             i.heal()
         elif i.health == 0:
-            print("They are defeated so therefore can't attack - heal them or end game")
+            print("They are defeated so therefore can't attack or do anything - type e on next character to end")
         elif i.name == "Senku":
                 fight = characters.get(fight)
                 i.petrify(fight)     
