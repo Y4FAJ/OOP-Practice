@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anime Fighter Arena</title>
+  <link rel="icon" type="image/png" href="assets/luffy-front.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ===================== TITLE SCREEN ===================== -->
+  <div id="title-screen" class="screen">
+    <div class="title-inner">
+      <h1 class="game-title">ANIME FIGHTER<br>ARENA</h1>
+      <p class="subtitle">A turn-based battle between<br>Luffy &middot; Senku &middot; Asta &middot; Thorfinn &middot; Rimuru</p>
+      <div class="title-roster" id="title-roster"></div>
+      <div class="title-buttons">
+        <button id="btn-new-run" class="pixel-btn big">Start New Run</button>
+        <button id="btn-load-run" class="pixel-btn big" hidden>Load Last Saved Run</button>
+      </div>
+      <p class="hint">Each fighter takes their turn in order. Pick a move, pick a target, survive!</p>
+    </div>
+  </div>
+
+  <!-- ===================== BATTLE SCREEN ===================== -->
+  <div id="battle-screen" class="screen" hidden>
+    <div id="arena">
+      <!-- Enemy side: everyone who is NOT currently taking a turn -->
+      <div id="enemy-row"></div>
+
+      <!-- Active fighter (back view, Pokemon style) -->
+      <div id="active-side">
+        <div id="active-sprite-wrap">
+          <img id="active-sprite" src="" alt="">
+        </div>
+      </div>
+
+      <!-- Active fighter info panel (bottom-right, Pokemon style) -->
+      <div id="active-panel" class="info-panel">
+        <div class="panel-top">
+          <span id="active-name" class="fighter-name"></span>
+          <span id="active-attack" class="attack-stat"></span>
+        </div>
+        <div class="hp-row">
+          <span class="hp-label">HP</span>
+          <div class="hp-bar"><div id="active-hp-fill" class="hp-fill"></div></div>
+          <span id="active-hp-text" class="hp-text"></span>
+        </div>
+        <div id="active-status" class="status-row"></div>
+      </div>
+    </div>
+
+    <!-- Bottom UI: message box + command menu -->
+    <div id="bottom-ui">
+      <div id="message-box"><p id="message-text"></p></div>
+      <div id="command-menu">
+        <div id="main-commands">
+          <button id="btn-attack" class="pixel-btn cmd"></button>
+          <button id="btn-heal" class="pixel-btn cmd">Heal</button>
+          <button id="btn-end" class="pixel-btn cmd danger">End Run</button>
+        </div>
+        <div id="target-commands" hidden>
+          <p class="target-prompt" id="target-prompt"></p>
+          <div id="target-buttons"></div>
+          <button id="btn-cancel-target" class="pixel-btn cmd">Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== END SCREEN ===================== -->
+  <div id="end-screen" class="screen" hidden>
+    <div class="title-inner">
+      <h1 class="game-title small">END OF RUN</h1>
+      <table id="end-stats-table" class="stats-table">
+        <thead>
+          <tr><th>Name</th><th>HP</th><th>Attack</th><th>Turns burnt</th><th>Turns cursed</th><th>Turns petrified</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="title-buttons">
+        <button id="btn-save-run" class="pixel-btn big">Save Run</button>
+        <button id="btn-no-save" class="pixel-btn big">Don't Save</button>
+      </div>
+      <p id="save-feedback" class="hint"></p>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+</body>
+</html>
