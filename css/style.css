@@ -94,10 +94,12 @@ button { font-family: inherit; cursor: pointer; }
 .title-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
 
 /* ===================== Battle screen / stage ===================== */
-/* The whole battle is rendered inside a fixed 16:9 stage that scales to
-   fit the window (letterboxed if needed), so the game looks the same at
-   any window size instead of zooming/cropping. All battle UI is sized
-   with container-query units (cqh/cqw = % of stage height/width). */
+/* The stage fills the whole browser window and all battle UI is sized
+   with container-query units (cqh/cqw = % of stage height/width), so
+   everything scales together. The arena uses an ultra-wide (2.34:1)
+   version of the background: on normal-to-wide windows it scales by
+   height (only the far left/right edges crop away), which keeps the
+   ground line - and everyone's feet - in the same place at any size. */
 #battle-screen {
   height: 100vh;
   min-height: 0;
@@ -107,19 +109,18 @@ button { font-family: inherit; cursor: pointer; }
 }
 #stage {
   position: relative;
-  width: min(100vw, calc(100vh * 16 / 9));
-  height: min(100vh, calc(100vw * 9 / 16));
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   container-type: size;
-  border: 3px solid var(--ui-border);
 }
 
 #arena {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  background: url('../assets/battle-background.png') center bottom / cover no-repeat;
+  background: url('../assets/battle-background-wide.png') center bottom / cover no-repeat;
   overflow: hidden;
   border-bottom: 4px solid var(--ui-border);
 }
@@ -213,6 +214,8 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--ui-light);
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px 6px;
 }
 .enemy-slot .mini-hp-bar { margin-top: .7cqh; height: 1cqh; background: #3a3a52; border: 2px solid var(--ui-border); }
 .enemy-slot .mini-hp-fill { height: 100%; width: 100%; background: var(--hp-green); transition: width .5s ease, background .5s ease; }
