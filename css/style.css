@@ -106,9 +106,11 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* --- Enemy row (front sprites, clickable when targeting) --- */
+/* Anchored so every enemy's feet rest on the same ground line of the
+   dirt arena in the background (bottom of the row = the ground). */
 #enemy-row {
   position: absolute;
-  top: 4%;
+  bottom: 42%;
   left: 0;
   right: 0;
   display: flex;
@@ -120,24 +122,46 @@ button { font-family: inherit; cursor: pointer; }
 .enemy-slot {
   background: none;
   border: 3px solid transparent;
-  padding: 6px 4px 4px;
+  padding: 6px 4px 0;
   text-align: center;
   width: 15%;
   min-width: 110px;
   transition: transform .1s ease;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+.sprite-stand {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.ground-shadow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 78%;
+  height: 12px;
+  transform: translate(-50%, 45%);
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.5) 0%, rgba(0,0,0,.28) 55%, rgba(0,0,0,0) 72%);
+  z-index: 0;
+  pointer-events: none;
 }
 .enemy-slot .enemy-sprite {
+  position: relative;
+  z-index: 1;
   height: 17vh;
   min-height: 100px;
   max-height: 170px;
   width: auto;
   max-width: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 6px 4px rgba(0,0,0,.45));
 }
 .enemy-slot .mini-panel {
-  margin-top: 4px;
+  width: 100%;
+  margin-bottom: 8px;
   background: rgba(20, 18, 34, .88);
   border: 2px solid var(--ui-border);
   padding: 6px 6px 7px;
@@ -149,7 +173,7 @@ button { font-family: inherit; cursor: pointer; }
 .enemy-slot .mini-hp-text { font-size: 8px; color: #cfc8ff; margin-top: 4px; display: block; }
 .enemy-slot .mini-status { margin-top: 3px; min-height: 10px; display: flex; gap: 3px; flex-wrap: wrap; }
 
-.enemy-slot.defeated .enemy-sprite { filter: grayscale(1) brightness(.5) drop-shadow(0 6px 4px rgba(0,0,0,.45)); }
+.enemy-slot.defeated .enemy-sprite { filter: grayscale(1) brightness(.5); }
 
 /* Targeting mode */
 .enemy-slot.targetable { cursor: pointer; }
@@ -162,7 +186,7 @@ button { font-family: inherit; cursor: pointer; }
 .enemy-slot.targetable::after {
   content: '\25BC';
   position: absolute;
-  top: -22px;
+  top: -26px;
   left: 50%;
   transform: translateX(-50%);
   color: var(--accent);
@@ -172,19 +196,29 @@ button { font-family: inherit; cursor: pointer; }
 @keyframes bounce-arrow { from { transform: translate(-50%, 0); } to { transform: translate(-50%, 6px); } }
 
 /* --- Active fighter (back view) --- */
+/* Standing on the near edge of the dirt arena, facing the others. */
 #active-side {
   position: absolute;
-  bottom: -2%;
-  left: 6%;
+  bottom: 4%;
+  left: 16%;
 }
-#active-sprite-wrap { position: relative; }
+#active-sprite-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+#active-sprite-wrap .ground-shadow {
+  width: 88%;
+  height: 18px;
+}
 #active-sprite {
+  position: relative;
+  z-index: 1;
   height: 34vh;
   min-height: 200px;
   max-height: 340px;
   width: auto;
   object-fit: contain;
-  filter: drop-shadow(0 10px 8px rgba(0,0,0,.5));
 }
 
 /* --- Active info panel --- */
@@ -298,7 +332,7 @@ button { font-family: inherit; cursor: pointer; }
 .flash { animation: hit-flash .3s ease 2; }
 
 @keyframes heal-glow {
-  0%, 100% { filter: drop-shadow(0 10px 8px rgba(0,0,0,.5)); }
+  0%, 100% { filter: none; }
   50% { filter: drop-shadow(0 0 22px rgba(88, 216, 84, .95)) brightness(1.35); }
 }
 .healing { animation: heal-glow .8s ease; }

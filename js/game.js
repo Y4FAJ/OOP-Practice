@@ -279,12 +279,15 @@ function renderEnemyRow() {
     slot.dataset.name = enemy.name;
     slot.disabled = true;
     slot.innerHTML = `
-      <img class="enemy-sprite" src="${SPRITES[enemy.name].front}" alt="${enemy.name}">
       <div class="mini-panel">
         <div class="mini-name"><span>${enemy.name}</span><span>ATK ${enemy.attack_power}</span></div>
         <div class="mini-hp-bar"><div class="mini-hp-fill" style="width:${Math.max(0, Math.min(100, enemy.health))}%; background:${hpColor(enemy.health)}"></div></div>
         <span class="mini-hp-text">HP ${enemy.health}/100</span>
         <div class="mini-status">${statusChips(enemy)}</div>
+      </div>
+      <div class="sprite-stand">
+        <span class="ground-shadow"></span>
+        <img class="enemy-sprite" src="${SPRITES[enemy.name].front}" alt="${enemy.name}">
       </div>`;
     slot.addEventListener("click", () => onTargetChosen(enemy.name));
     enemyRow.appendChild(slot);
