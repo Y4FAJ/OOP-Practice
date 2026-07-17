@@ -324,7 +324,7 @@ function renderTurn() {
   } else {
     setMessage([
       `${f.name} | HP: ${f.health} | Attack: ${f.attack_power}`,
-      `Who should ${f.name} attack? Attack, heal to recover, or end the run.`,
+      `Who should ${f.name} attack? Press Heal to recover or end the run.`,
     ]);
   }
 }
