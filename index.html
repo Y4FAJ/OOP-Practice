@@ -28,7 +28,15 @@
 
   <!-- ===================== BATTLE SCREEN ===================== -->
   <div id="battle-screen" class="screen" hidden>
+  <div id="stage">
     <div id="arena">
+      <!-- Who attacks next (top-right corner) -->
+      <div id="next-indicator">
+        <span class="next-label">NEXT</span>
+        <img id="next-sprite" src="" alt="">
+        <span id="next-name"></span>
+      </div>
+
       <!-- Enemy side: everyone who is NOT currently taking a turn -->
       <div id="enemy-row"></div>
 
@@ -71,6 +79,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 
   <!-- ===================== END SCREEN ===================== -->

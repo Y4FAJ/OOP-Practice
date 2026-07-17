@@ -1,7 +1,12 @@
 /* =====================================================================
    Anime Fighter Arena - web version of "OOP Fighter Game.py"
-   All mechanics (stats, attacks, status effects, probabilities, heal,
-   save/load, turn order) are a faithful 1:1 port of the Python game.
+   Mechanics (stats, attacks, status effects, heal, save/load, turn
+   order) are ported from the Python game, with these balance changes
+   requested for the web version:
+     - petrification blocks an attack 2/3 of the time (was 1/2)
+     - burn/curse also deal their damage at the start of the afflicted
+       fighter's own turn (so the effects tick every round instead of
+       only when that fighter gets attacked)
    ===================================================================== */
 
 "use strict";
@@ -12,6 +17,24 @@ function randrange(a, b) {
 }
 
 const SAVE_KEY = "fighters.json";
+
+/* =====================================================================
+   Attack recorder: attacks record what happened as an ordered list of
+   events so the UI can play them back one at a time (one slash at a
+   time on the health bar, one message line at a time).
+     {type:"msg", text}                      - a battle log line
+     {type:"hit", name, dmg, hp, kind}       - name lost dmg HP (hp = HP after)
+   ===================================================================== */
+function makeRecorder() {
+  const events = [];
+  return {
+    events,
+    log(text) { events.push({ type: "msg", text }); },
+    hit(target, dmg, kind) {
+      events.push({ type: "hit", name: target.name, dmg, hp: Math.max(0, target.health), kind: kind || "attack" });
+    },
+  };
+}
 
 /* ============================ Classes ============================ */
 
@@ -37,123 +60,127 @@ class Fighter {
 
   /* Applies effects to a character if called (same order as Python:
      burn/curse tick on the enemy, petrify ticks on the attacker). */
-  applyEffects(enemy, log) {
+  applyEffects(enemy, R) {
     if (enemy.burn_turns > 0) {
       enemy.health = enemy.health - 3;
       enemy.burn_turns = enemy.burn_turns - 1;
-      log(`${enemy.name} lost an extra 3 health due to being burned. Turns remaining: ${enemy.burn_turns}`);
+      R.hit(enemy, 3, "burn");
+      R.log(`${enemy.name} lost an extra 3 health due to being burned. Turns remaining: ${enemy.burn_turns}`);
     }
     if (enemy.curse_turns > 0) {
       enemy.health = enemy.health - 4;
       enemy.curse_turns = enemy.curse_turns - 1;
-      log(`${enemy.name} lost an extra 4 health due to being cursed. Turns remaining: ${enemy.curse_turns}`);
+      R.hit(enemy, 4, "curse");
+      R.log(`${enemy.name} lost an extra 4 health due to being cursed. Turns remaining: ${enemy.curse_turns}`);
     }
     if (this.petrified > 0) {
       this.petrified = this.petrified - 1;
-      log(`${this.name} has ${this.petrified} turns left of being partially petrified`);
+      R.log(`${this.name} has ${this.petrified} turns left of being partially petrified`);
     }
     if (enemy.health <= 0) {
       enemy.health = 0;
-      log(`${enemy.name} is defeated!`);
+      R.log(`${enemy.name} is defeated!`);
     }
+  }
+
+  /* 2/3 chance that petrification stops the attack (buffed from 1/2) */
+  petrifyBlocks() {
+    return randrange(1, 4) <= 2;
   }
 }
 
 class Swordsman extends Fighter {
-  attack(enemy, log) {
+  doSlashes(enemy, R) {
+    const hits = randrange(1, 3);
+    for (let h = 0; h < hits; h++) { // one slash at a time so each hit shows on the health bar
+      enemy.health = enemy.health - this.attack_power;
+      R.hit(enemy, this.attack_power);
+    }
+    R.log(`${this.name} slashed ${enemy.name} ${hits} times`);
+  }
+
+  attack(enemy, R) {
     if (this.petrified > 0) { // Character attacking already has petrified status
-      const chance = randrange(1, 3);
-      if (chance === 1) { // prob of 1/2 of not attacking
-        log(`${this.name} couldn't attack due to being petrified!`);
+      if (this.petrifyBlocks()) {
+        R.log(`${this.name} couldn't attack due to being petrified!`);
       } else {
-        const hits = randrange(1, 3);
-        enemy.health = enemy.health - (this.attack_power * hits);
-        log(`${this.name} slashed ${enemy.name} ${hits} times`);
+        this.doSlashes(enemy, R);
       }
     } else if (this.petrified === 0) {
-      const hits = randrange(1, 3);
-      enemy.health = enemy.health - (this.attack_power * hits);
-      log(`${this.name} slashed ${enemy.name} ${hits} times`);
+      this.doSlashes(enemy, R);
     }
-    this.applyEffects(enemy, log);
+    this.applyEffects(enemy, R);
   }
 }
 
 class Mage extends Fighter {
-  attack(enemy, log) { // rimuru's attack
-    if (this.petrified > 0) { // Character attacking already has petrified status
-      const chance = randrange(1, 3);
-      if (chance === 1) { // prob of 1/2 of not attacking
-        log(`${this.name} couldn't attack due to being petrified!`);
-      } else {
-        enemy.health = enemy.health - this.attack_power;
-        log(`${this.name} used the unique spell Megiddo on ${enemy.name}`);
-        if (enemy.curse_turns === 0) {
-          const amount = randrange(0, 4); // 3/4 chance of being cursed
-          if (amount > 0) {
-            enemy.curse_turns = amount;
-            log(`${enemy.name} is now cursed for ${amount} turns`);
-          }
-        }
-      }
-    } else if (this.petrified === 0) {
-      enemy.health = enemy.health - this.attack_power;
-      log(`${this.name} used the unique spell Megiddo on ${enemy.name}`);
-      if (enemy.curse_turns === 0) {
-        const amount = randrange(0, 4);
-        if (amount > 0) {
-          enemy.curse_turns = amount;
-          log(`${enemy.name} is now cursed for ${amount} turns`);
-        }
+  doMegiddo(enemy, R) {
+    enemy.health = enemy.health - this.attack_power;
+    R.hit(enemy, this.attack_power);
+    R.log(`${this.name} used the unique spell Megiddo on ${enemy.name}`);
+    if (enemy.curse_turns === 0) {
+      const amount = randrange(0, 4); // 3/4 chance of being cursed
+      if (amount > 0) {
+        enemy.curse_turns = amount;
+        R.log(`${enemy.name} is now cursed for ${amount} turns`);
       }
     }
-    this.applyEffects(enemy, log);
   }
 
-  // Senku specific attack - can't be petrified himself unless he attacks himself
-  petrify(enemy, log) {
+  attack(enemy, R) { // rimuru's attack
+    if (this.petrified > 0) { // Character attacking already has petrified status
+      if (this.petrifyBlocks()) {
+        R.log(`${this.name} couldn't attack due to being petrified!`);
+      } else {
+        this.doMegiddo(enemy, R);
+      }
+    } else if (this.petrified === 0) {
+      this.doMegiddo(enemy, R);
+    }
+    this.applyEffects(enemy, R);
+  }
+
+  // Senku specific attack (Medusa) - can't be petrified himself unless he attacks himself
+  petrify(enemy, R) {
     enemy.health = enemy.health - this.attack_power;
-    log(`${this.name} spoke 1 meter, 1 second into the petrification device and threw it at ${enemy.name}`);
+    R.hit(enemy, this.attack_power);
+    R.log(`${this.name} spoke 1 meter, 1 second into the Medusa and threw it at ${enemy.name}`);
     if (enemy.petrified === 0) {
       const amount = randrange(0, 4); // 3/4 chance of being petrified
       if (amount > 0) {
         enemy.petrified = amount;
-        log(`${enemy.name} is partially petrified for ${amount} turns!`);
+        R.log(`${enemy.name} is partially petrified for ${amount} turns!`);
       }
     }
-    this.applyEffects(enemy, log);
+    this.applyEffects(enemy, R);
   }
 }
 
 class Brawler extends Fighter {
-  attack(enemy, log) {
-    if (this.petrified > 0) { // Character attacking already has petrified status
-      const chance = randrange(1, 3);
-      if (chance === 1) { // prob of 1/2 of not attacking
-        log(`${this.name} couldn't attack due to being petrified!`);
-      } else {
-        enemy.health = enemy.health - this.attack_power;
-        log(`${this.name} used the attack Red Hawk on ${enemy.name}`);
-        if (enemy.burn_turns === 0) {
-          const amount = randrange(0, 3); // 2/3 chance of being burned
-          if (amount > 0) {
-            enemy.burn_turns = amount;
-            log(`${enemy.name} is now burned for ${amount} turns!`);
-          }
-        }
-      }
-    } else if (this.petrified === 0) {
-      enemy.health = enemy.health - this.attack_power;
-      log(`${this.name} used the attack Red Hawk on ${enemy.name}`);
-      if (enemy.burn_turns === 0) {
-        const amount = randrange(0, 3);
-        if (amount > 0) {
-          enemy.burn_turns = amount;
-          log(`${enemy.name} is now burned for ${amount} turns!`);
-        }
+  doRedHawk(enemy, R) {
+    enemy.health = enemy.health - this.attack_power;
+    R.hit(enemy, this.attack_power);
+    R.log(`${this.name} used the attack Red Hawk on ${enemy.name}`);
+    if (enemy.burn_turns === 0) {
+      const amount = randrange(0, 3); // 2/3 chance of being burned
+      if (amount > 0) {
+        enemy.burn_turns = amount;
+        R.log(`${enemy.name} is now burned for ${amount} turns!`);
       }
     }
-    this.applyEffects(enemy, log);
+  }
+
+  attack(enemy, R) {
+    if (this.petrified > 0) { // Character attacking already has petrified status
+      if (this.petrifyBlocks()) {
+        R.log(`${this.name} couldn't attack due to being petrified!`);
+      } else {
+        this.doRedHawk(enemy, R);
+      }
+    } else if (this.petrified === 0) {
+      this.doRedHawk(enemy, R);
+    }
+    this.applyEffects(enemy, R);
   }
 }
 
@@ -177,15 +204,20 @@ const SPRITES = {
 
 const CLASS_LABEL = { Luffy: "Brawler", Senku: "Mage", Asta: "Swordsman", Thorfinn: "Swordsman", Rimuru: "Mage" };
 
-/* Senku always uses his petrification device in the original game loop;
+/* Senku always uses his Medusa in the original game loop;
    everyone else uses their class attack. */
 const MOVE_LABEL = {
   Luffy: "Red Hawk",
-  Senku: "Petrify Device",
+  Senku: "Medusa",
   Asta: "Slash",
   Thorfinn: "Slash",
   Rimuru: "Megiddo",
 };
+
+/* Playback pacing (ms) - slow enough that players can read each line */
+const HIT_MS = 750;
+const MSG_MS = 1500;
+const END_PAUSE_MS = 1200;
 
 /* ============================ Game state ============================ */
 
@@ -209,6 +241,7 @@ const activeHpText = el("active-hp-text");
 const activeStatus = el("active-status");
 
 const messageText = el("message-text");
+const messageBox = el("message-box");
 const mainCommands = el("main-commands");
 const targetCommands = el("target-commands");
 const targetButtons = el("target-buttons");
@@ -223,6 +256,10 @@ const btnCancelTarget = el("btn-cancel-target");
 
 function currentFighter() {
   return catalog[turnIndex];
+}
+
+function nextFighter() {
+  return catalog[(turnIndex + 1) % catalog.length];
 }
 
 function hpColor(hp) {
@@ -241,6 +278,14 @@ function statusChips(f) {
 
 function setMessage(lines) {
   messageText.textContent = Array.isArray(lines) ? lines.join("\n") : lines;
+  messageBox.scrollTop = messageBox.scrollHeight;
+}
+
+function appendMessage(line) {
+  messageText.textContent = messageText.textContent
+    ? messageText.textContent + "\n" + line
+    : line;
+  messageBox.scrollTop = messageBox.scrollHeight;
 }
 
 function popText(container, text, cls) {
@@ -254,6 +299,13 @@ function popText(container, text, cls) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ============================ Rendering ============================ */
+
+function renderNextIndicator() {
+  const n = nextFighter();
+  el("next-sprite").src = SPRITES[n.name].front;
+  el("next-sprite").alt = n.name;
+  el("next-name").textContent = n.name;
+}
 
 function renderActivePanel() {
   const f = currentFighter();
@@ -294,6 +346,23 @@ function renderEnemyRow() {
   }
 }
 
+/* Set one fighter's HP bar/text to a specific value (used mid-playback
+   so each slash is visible on the health bar one at a time). */
+function setDisplayedHp(name, hp) {
+  const f = currentFighter();
+  if (name === f.name) {
+    activeHpFill.style.width = Math.max(0, Math.min(100, hp)) + "%";
+    activeHpFill.style.background = hpColor(hp);
+    activeHpText.textContent = hp + "/100";
+    return;
+  }
+  const slot = [...enemyRow.children].find((s) => s.dataset.name === name);
+  if (!slot) return;
+  slot.querySelector(".mini-hp-fill").style.width = Math.max(0, Math.min(100, hp)) + "%";
+  slot.querySelector(".mini-hp-fill").style.background = hpColor(hp);
+  slot.querySelector(".mini-hp-text").textContent = `HP ${hp}/100`;
+}
+
 function refreshBars() {
   // Update HP bars/status chips in place (without rebuilding sprites)
   const f = currentFighter();
@@ -311,22 +380,26 @@ function refreshBars() {
   }
 }
 
-function renderTurn() {
+function turnPrompt() {
   const f = currentFighter();
-  renderActivePanel();
-  renderEnemyRow();
-  hideTargetMenu();
   if (f.health === 0) {
-    setMessage([
+    return [
       `${f.name} | HP: ${f.health} | Attack: ${f.attack_power}`,
       "They are defeated so therefore can't attack or do anything - end the run or play without this character",
-    ]);
-  } else {
-    setMessage([
-      `${f.name} | HP: ${f.health} | Attack: ${f.attack_power}`,
-      `Who should ${f.name} attack? Press Heal to recover or end the run.`,
-    ]);
+    ];
   }
+  return [
+    `${f.name} | HP: ${f.health} | Attack: ${f.attack_power}`,
+    `Who should ${f.name} attack? Press Heal to recover or end the run.`,
+  ];
+}
+
+function renderTurn() {
+  renderActivePanel();
+  renderEnemyRow();
+  renderNextIndicator();
+  hideTargetMenu();
+  setMessage(turnPrompt());
 }
 
 /* ============================ Target menu ============================ */
@@ -360,52 +433,74 @@ function hideTargetMenu() {
   }
 }
 
+/* ============================ Event playback ============================ */
+
+function hitAnimTarget(name) {
+  const f = currentFighter();
+  if (name === f.name) {
+    return { anim: activeSprite, pop: el("active-sprite-wrap") };
+  }
+  const slot = [...enemyRow.children].find((s) => s.dataset.name === name);
+  return slot ? { anim: slot, pop: slot } : null;
+}
+
+/* Plays recorded events one at a time: each hit lands separately on the
+   health bar, each message line appears on its own and stays long
+   enough to read. */
+async function playEvents(events) {
+  for (const ev of events) {
+    if (ev.type === "hit") {
+      const t = hitAnimTarget(ev.name);
+      if (t) {
+        t.anim.classList.add("hit", "flash");
+        const cls = ev.kind === "burn" ? "burn-pop" : ev.kind === "curse" ? "curse-pop" : "";
+        popText(t.pop, "-" + ev.dmg, cls);
+      }
+      setDisplayedHp(ev.name, ev.hp);
+      await sleep(HIT_MS);
+      if (t) t.anim.classList.remove("hit", "flash");
+    } else {
+      appendMessage(ev.text);
+      await sleep(MSG_MS);
+    }
+  }
+}
+
 /* ============================ Actions ============================ */
 
 async function onTargetChosen(name) {
   if (busy) return;
   busy = true;
   hideTargetMenu();
+  setMessage([]);
 
   const attacker = currentFighter();
   const target = catalog.find((c) => c.name === name);
-  const hpBefore = { attacker: attacker.health, target: target.health };
-  const lines = [];
-  const log = (msg) => lines.push(msg);
+  const R = makeRecorder();
 
-  // Same dispatch as the original game loop: Senku always petrifies,
+  // Same dispatch as the original game loop: Senku always uses Medusa,
   // everyone else uses their class attack.
   if (attacker.name === "Senku") {
-    attacker.petrify(target, log);
+    attacker.petrify(target, R);
   } else {
-    attacker.attack(target, log);
+    attacker.attack(target, R);
   }
 
-  // --- animations ---
+  // --- playback: lunge, then one event at a time ---
   activeSprite.classList.add("attacking");
-  await sleep(350);
-
-  const slot = [...enemyRow.children].find((s) => s.dataset.name === name);
-  const targetDamage = hpBefore.target - target.health;
-  if (targetDamage > 0 && slot) {
-    slot.classList.add("hit", "flash");
-    popText(slot, "-" + targetDamage, "");
-  } else if (slot) {
-    popText(slot, "MISS", "status-pop");
-  }
-  const selfDamage = hpBefore.attacker - attacker.health; // burn/curse ticking on the attacker never happens here, but petrify count does
-  if (selfDamage > 0) {
-    popText(el("active-sprite-wrap"), "-" + selfDamage, "");
-  }
-
   await sleep(450);
   activeSprite.classList.remove("attacking");
-  if (slot) slot.classList.remove("hit", "flash");
 
+  const hadHits = R.events.some((e) => e.type === "hit");
+  if (!hadHits) {
+    const slot = [...enemyRow.children].find((s) => s.dataset.name === name);
+    if (slot) popText(slot, "MISS", "status-pop");
+  }
+
+  await playEvents(R.events);
   refreshBars();
-  setMessage(lines);
 
-  await sleep(1400);
+  await sleep(END_PAUSE_MS);
   busy = false;
   nextTurn();
 }
@@ -414,6 +509,7 @@ async function onHeal() {
   if (busy) return;
   busy = true;
   hideTargetMenu();
+  setMessage([]);
 
   const f = currentFighter();
   const lines = [];
@@ -427,7 +523,7 @@ async function onHeal() {
   refreshBars();
   setMessage(lines);
 
-  await sleep(1200);
+  await sleep(MSG_MS);
   busy = false;
   nextTurn();
 }
@@ -439,7 +535,7 @@ async function onAttackPressed() {
     // Same as the original: a defeated fighter can't attack, their turn passes.
     busy = true;
     setMessage("They are defeated so therefore can't attack or do anything - end the run or play without this character");
-    await sleep(1400);
+    await sleep(MSG_MS);
     busy = false;
     nextTurn();
     return;
@@ -447,9 +543,44 @@ async function onAttackPressed() {
   showTargetMenu();
 }
 
-function nextTurn() {
+/* Burn/curse now also tick at the start of the afflicted fighter's own
+   turn, so the effects are an actual threat every round. */
+async function startOfTurnEffects() {
+  const f = currentFighter();
+  if (f.health === 0) return;
+  const R = makeRecorder();
+
+  if (f.burn_turns > 0) {
+    f.health = f.health - 3;
+    f.burn_turns = f.burn_turns - 1;
+    R.hit(f, 3, "burn");
+    R.log(`${f.name} lost 3 health to their burn. Turns remaining: ${f.burn_turns}`);
+  }
+  if (f.curse_turns > 0) {
+    f.health = f.health - 4;
+    f.curse_turns = f.curse_turns - 1;
+    R.hit(f, 4, "curse");
+    R.log(`${f.name} lost 4 health to their curse. Turns remaining: ${f.curse_turns}`);
+  }
+  if (f.health <= 0) {
+    f.health = 0;
+    R.log(`${f.name} is defeated!`);
+  }
+  if (R.events.length === 0) return;
+
+  busy = true;
+  setMessage([]);
+  await playEvents(R.events);
+  refreshBars();
+  await sleep(END_PAUSE_MS);
+  busy = false;
+}
+
+async function nextTurn() {
   turnIndex = (turnIndex + 1) % catalog.length;
   renderTurn();
+  await startOfTurnEffects();
+  setMessage(turnPrompt());
 }
 
 /* ============================ Save / Load ============================ */

@@ -93,17 +93,60 @@ button { font-family: inherit; cursor: pointer; }
 
 .title-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
 
-/* ===================== Battle screen ===================== */
-#battle-screen { background: #0b0b14; }
+/* ===================== Battle screen / stage ===================== */
+/* The whole battle is rendered inside a fixed 16:9 stage that scales to
+   fit the window (letterboxed if needed), so the game looks the same at
+   any window size instead of zooming/cropping. All battle UI is sized
+   with container-query units (cqh/cqw = % of stage height/width). */
+#battle-screen {
+  height: 100vh;
+  min-height: 0;
+  justify-content: center;
+  align-items: center;
+  background: #0b0b14;
+}
+#stage {
+  position: relative;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  display: flex;
+  flex-direction: column;
+  container-type: size;
+  border: 3px solid var(--ui-border);
+}
 
 #arena {
   position: relative;
   flex: 1 1 auto;
-  min-height: 420px;
+  min-height: 0;
   background: url('../assets/battle-background.png') center bottom / cover no-repeat;
   overflow: hidden;
   border-bottom: 4px solid var(--ui-border);
 }
+
+/* --- Next-up indicator (top-right corner) --- */
+#next-indicator {
+  position: absolute;
+  top: 1.5cqh;
+  right: 1cqw;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: .8cqw;
+  background: rgba(20, 18, 34, .9);
+  border: 2px solid var(--ui-border);
+  padding: .9cqh 1cqw;
+}
+#next-indicator .next-label {
+  font-size: clamp(6px, 1cqh, 9px);
+  color: var(--accent);
+}
+#next-sprite {
+  height: 5cqh;
+  width: auto;
+  object-fit: contain;
+}
+#next-name { font-size: clamp(6px, 1.2cqh, 11px); }
 
 /* --- Enemy row (front sprites, clickable when targeting) --- */
 /* Anchored so every enemy's feet rest on the same ground line of the
@@ -116,16 +159,16 @@ button { font-family: inherit; cursor: pointer; }
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: 2.5%;
-  padding: 0 2%;
+  gap: 2.5cqw;
+  padding: 0 2cqw;
 }
 .enemy-slot {
   background: none;
   border: 3px solid transparent;
-  padding: 6px 4px 0;
+  padding: .8cqh .4cqw 0;
   text-align: center;
-  width: 15%;
-  min-width: 110px;
+  width: 15cqw;
+  min-width: 0;
   transition: transform .1s ease;
   position: relative;
   display: flex;
@@ -143,7 +186,7 @@ button { font-family: inherit; cursor: pointer; }
   bottom: 0;
   left: 50%;
   width: 78%;
-  height: 12px;
+  height: 1.6cqh;
   transform: translate(-50%, 45%);
   background: radial-gradient(ellipse at center, rgba(0,0,0,.5) 0%, rgba(0,0,0,.28) 55%, rgba(0,0,0,0) 72%);
   z-index: 0;
@@ -152,32 +195,35 @@ button { font-family: inherit; cursor: pointer; }
 .enemy-slot .enemy-sprite {
   position: relative;
   z-index: 1;
-  height: 17vh;
-  min-height: 100px;
-  max-height: 170px;
+  height: 17cqh;
   width: auto;
   max-width: 100%;
   object-fit: contain;
 }
 .enemy-slot .mini-panel {
   width: 100%;
-  margin-bottom: 8px;
+  margin-bottom: 1cqh;
   background: rgba(20, 18, 34, .88);
   border: 2px solid var(--ui-border);
-  padding: 6px 6px 7px;
+  padding: .8cqh .5cqw .9cqh;
   text-align: left;
 }
-.enemy-slot .mini-name { font-size: 9px; color: var(--ui-light); display: flex; justify-content: space-between; }
-.enemy-slot .mini-hp-bar { margin-top: 5px; height: 8px; background: #3a3a52; border: 2px solid var(--ui-border); }
+.enemy-slot .mini-name {
+  font-size: clamp(6px, 1.15cqh, 10px);
+  color: var(--ui-light);
+  display: flex;
+  justify-content: space-between;
+}
+.enemy-slot .mini-hp-bar { margin-top: .7cqh; height: 1cqh; background: #3a3a52; border: 2px solid var(--ui-border); }
 .enemy-slot .mini-hp-fill { height: 100%; width: 100%; background: var(--hp-green); transition: width .5s ease, background .5s ease; }
-.enemy-slot .mini-hp-text { font-size: 8px; color: #cfc8ff; margin-top: 4px; display: block; }
-.enemy-slot .mini-status { margin-top: 3px; min-height: 10px; display: flex; gap: 3px; flex-wrap: wrap; }
+.enemy-slot .mini-hp-text { font-size: clamp(5px, 1cqh, 9px); color: #cfc8ff; margin-top: .5cqh; display: block; }
+.enemy-slot .mini-status { margin-top: .4cqh; min-height: 1.3cqh; display: flex; gap: .3cqw; flex-wrap: wrap; }
 
 .enemy-slot.defeated .enemy-sprite { filter: grayscale(1) brightness(.5); }
 
 /* Targeting mode */
 .enemy-slot.targetable { cursor: pointer; }
-.enemy-slot.targetable:hover { transform: translateY(-6px) scale(1.04); }
+.enemy-slot.targetable:hover { transform: translateY(-.8cqh) scale(1.04); }
 .enemy-slot.targetable { border-color: var(--accent); animation: target-pulse 1s infinite; background: rgba(255, 204, 51, .08); }
 @keyframes target-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 204, 51, .55); }
@@ -186,20 +232,20 @@ button { font-family: inherit; cursor: pointer; }
 .enemy-slot.targetable::after {
   content: '\25BC';
   position: absolute;
-  top: -26px;
+  top: -3.4cqh;
   left: 50%;
   transform: translateX(-50%);
   color: var(--accent);
-  font-size: 14px;
+  font-size: clamp(9px, 1.8cqh, 15px);
   animation: bounce-arrow .6s infinite alternate;
 }
-@keyframes bounce-arrow { from { transform: translate(-50%, 0); } to { transform: translate(-50%, 6px); } }
+@keyframes bounce-arrow { from { transform: translate(-50%, 0); } to { transform: translate(-50%, .8cqh); } }
 
 /* --- Active fighter (back view) --- */
 /* Standing on the near edge of the dirt arena, facing the others. */
 #active-side {
   position: absolute;
-  bottom: 4%;
+  bottom: 5%;
   left: 16%;
 }
 #active-sprite-wrap {
@@ -209,14 +255,12 @@ button { font-family: inherit; cursor: pointer; }
 }
 #active-sprite-wrap .ground-shadow {
   width: 88%;
-  height: 18px;
+  height: 2.2cqh;
 }
 #active-sprite {
   position: relative;
   z-index: 1;
-  height: 25vh;
-  min-height: 150px;
-  max-height: 250px;
+  height: 25cqh;
   width: auto;
   object-fit: contain;
 }
@@ -224,31 +268,30 @@ button { font-family: inherit; cursor: pointer; }
 /* --- Active info panel --- */
 #active-panel {
   position: absolute;
-  right: 3%;
-  bottom: 6%;
-  width: 320px;
-  max-width: 44%;
+  right: 2cqw;
+  bottom: 7%;
+  width: clamp(170px, 25cqw, 330px);
 }
 .info-panel {
   background: var(--ui-light);
   color: #22223a;
   border: 4px solid var(--ui-border);
   box-shadow: 6px 6px 0 rgba(0,0,0,.4);
-  padding: 12px 14px;
+  padding: 1.5cqh 1cqw;
 }
 .panel-top { display: flex; justify-content: space-between; align-items: baseline; }
-.fighter-name { font-size: 13px; }
-.attack-stat { font-size: 9px; color: #8a2c2c; }
-.hp-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-.hp-label { font-size: 9px; color: #d88800; }
-.hp-bar { flex: 1; height: 12px; background: #cabfa8; border: 2px solid var(--ui-border); }
+.fighter-name { font-size: clamp(8px, 1.7cqh, 14px); }
+.attack-stat { font-size: clamp(6px, 1.15cqh, 10px); color: #8a2c2c; }
+.hp-row { display: flex; align-items: center; gap: .6cqw; margin-top: 1.3cqh; }
+.hp-label { font-size: clamp(6px, 1.15cqh, 10px); color: #d88800; }
+.hp-bar { flex: 1; height: 1.5cqh; background: #cabfa8; border: 2px solid var(--ui-border); }
 .hp-fill { height: 100%; width: 100%; background: var(--hp-green); transition: width .5s ease, background .5s ease; }
-.hp-text { font-size: 9px; }
-.status-row { margin-top: 8px; min-height: 14px; display: flex; gap: 5px; flex-wrap: wrap; }
+.hp-text { font-size: clamp(6px, 1.15cqh, 10px); }
+.status-row { margin-top: 1cqh; min-height: 1.8cqh; display: flex; gap: .4cqw; flex-wrap: wrap; }
 
 .status-chip {
-  font-size: 7px;
-  padding: 3px 5px;
+  font-size: clamp(5px, .9cqh, 8px);
+  padding: .35cqh .3cqw;
   border: 2px solid var(--ui-border);
   color: #fff;
   text-shadow: 1px 1px 0 rgba(0,0,0,.5);
@@ -259,23 +302,22 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ===================== Bottom UI ===================== */
 #bottom-ui {
-  flex: 0 0 auto;
+  flex: 0 0 26cqh;
   display: flex;
-  gap: 10px;
-  padding: 12px;
+  gap: 1cqw;
+  padding: 1.4cqh 1cqw;
   background: var(--ui-dark);
-  min-height: 148px;
+  min-height: 0;
 }
 #message-box {
   flex: 1.4;
   background: var(--ui-light);
   color: #22223a;
   border: 4px solid var(--ui-border);
-  padding: 14px;
-  font-size: 11px;
+  padding: 1.6cqh 1.2cqw;
+  font-size: clamp(8px, 1.5cqh, 13px);
   line-height: 1.9;
   overflow-y: auto;
-  max-height: 168px;
 }
 #message-text { white-space: pre-line; }
 
@@ -283,19 +325,21 @@ button { font-family: inherit; cursor: pointer; }
   flex: 1;
   border: 4px solid var(--ui-border);
   background: var(--ui-mid);
-  padding: 12px;
+  padding: 1.4cqh 1cqw;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow-y: auto;
 }
-#main-commands { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#main-commands { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2cqh 1cqw; }
 #main-commands #btn-attack { grid-column: 1 / -1; }
-.pixel-btn.cmd { font-size: 11px; padding: 12px 8px; }
+.pixel-btn.cmd { font-size: clamp(8px, 1.4cqh, 12px); padding: 1.5cqh .5cqw; }
 
 #target-commands { text-align: center; }
-.target-prompt { font-size: 10px; margin-bottom: 10px; color: var(--accent); }
-#target-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px; }
-#target-buttons .pixel-btn { font-size: 10px; padding: 10px 12px; }
+.target-prompt { font-size: clamp(7px, 1.3cqh, 11px); margin-bottom: 1.2cqh; color: var(--accent); }
+#target-buttons { display: flex; flex-wrap: wrap; gap: .8cqh .6cqw; justify-content: center; margin-bottom: 1.2cqh; }
+#target-buttons .pixel-btn { font-size: clamp(7px, 1.3cqh, 11px); padding: 1.2cqh 1cqw; }
+#btn-cancel-target { font-size: clamp(7px, 1.2cqh, 10px); padding: 1cqh 1.4cqw; }
 
 /* ===================== End screen table ===================== */
 .stats-table {
@@ -313,8 +357,8 @@ button { font-family: inherit; cursor: pointer; }
 /* ===================== Animations ===================== */
 @keyframes lunge-right {
   0% { transform: translate(0, 0); }
-  35% { transform: translate(60px, -30px); }
-  60% { transform: translate(60px, -30px); }
+  35% { transform: translate(4cqw, -4cqh); }
+  60% { transform: translate(4cqw, -4cqh); }
   100% { transform: translate(0, 0); }
 }
 .attacking { animation: lunge-right .55s ease; }
@@ -342,7 +386,7 @@ button { font-family: inherit; cursor: pointer; }
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 14px;
+  font-size: clamp(10px, 2cqh, 16px);
   color: #ff5252;
   text-shadow: 2px 2px 0 #000;
   animation: dmg-float 1s ease forwards;
@@ -350,21 +394,11 @@ button { font-family: inherit; cursor: pointer; }
   z-index: 5;
 }
 .dmg-pop.heal-pop { color: #6dff6d; }
-.dmg-pop.status-pop { color: #ffd24d; font-size: 10px; }
+.dmg-pop.status-pop { color: #ffd24d; font-size: clamp(7px, 1.4cqh, 11px); }
+.dmg-pop.burn-pop { color: var(--burn); }
+.dmg-pop.curse-pop { color: var(--curse); }
 @keyframes dmg-float {
-  0% { opacity: 0; transform: translate(-50%, 10px); }
+  0% { opacity: 0; transform: translate(-50%, 1.3cqh); }
   20% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -44px); }
-}
-
-/* ===================== Small screens ===================== */
-@media (max-width: 760px) {
-  #enemy-row { gap: 1%; }
-  .enemy-slot { min-width: 86px; }
-  .enemy-slot .enemy-sprite { min-height: 64px; height: 12vh; }
-  .enemy-slot .mini-name { font-size: 7px; }
-  #active-sprite { min-height: 110px; height: 18vh; }
-  #active-panel { width: 220px; }
-  #bottom-ui { flex-direction: column; }
-  #message-box { max-height: 110px; }
+  100% { opacity: 0; transform: translate(-50%, -5.5cqh); }
 }

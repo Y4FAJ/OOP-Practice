@@ -29,16 +29,16 @@ python3 -m http.server 8000
 | Fighter | Class | HP | Attack | Move |
 |---|---|---|---|---|
 | Luffy | Brawler | 100 | 35 | Red Hawk — 2/3 chance to burn (1–2 turns) |
-| Senku | Mage | 100 | 30 | Petrification device — 3/4 chance to petrify (1–3 turns) |
+| Senku | Mage | 100 | 30 | Medusa — 3/4 chance to petrify (1–3 turns) |
 | Asta | Swordsman | 100 | 22 | Slash — hits 1–2 times |
 | Thorfinn | Swordsman | 100 | 20 | Slash — hits 1–2 times |
 | Rimuru | Mage | 100 | 36 | Megiddo — 3/4 chance to curse (1–3 turns) |
 
 ### Status effects
 
-- **Burn**: lose 3 extra HP whenever you are attacked, for the remaining turns.
-- **Curse**: lose 4 extra HP whenever you are attacked, for the remaining turns.
-- **Petrify**: 1/2 chance your attack fails while petrified (ticks down when you attack).
+- **Burn**: lose 3 extra HP at the start of your own turn and whenever you are attacked, for the remaining turns.
+- **Curse**: lose 4 extra HP at the start of your own turn and whenever you are attacked, for the remaining turns.
+- **Petrify**: 2/3 chance your attack fails while petrified (ticks down when you attack).
 
 ### Other rules
 
