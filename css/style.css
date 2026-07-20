@@ -375,6 +375,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 .hit { animation: hit-shake .45s ease; }
 
+@keyframes vibrate {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 1px); }
+  50% { transform: translate(3px, -1px); }
+  75% { transform: translate(-3px, -1px); }
+}
+.vibrating { animation: vibrate .12s linear 5; }
+
 .winner-sprite {
   height: 220px;
   width: auto;

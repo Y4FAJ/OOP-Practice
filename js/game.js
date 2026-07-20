@@ -486,10 +486,17 @@ async function onTargetChosen(name) {
     attacker.attack(target, R);
   }
 
-  // --- playback: lunge, then one event at a time ---
-  activeSprite.classList.add("attacking");
-  await sleep(450);
-  activeSprite.classList.remove("attacking");
+  // --- playback: lunge (or vibrate if petrify blocked the attack) ---
+  const blocked = R.events[0] && R.events[0].type === "msg" && R.events[0].text.includes("couldn't attack");
+  if (blocked) {
+    activeSprite.classList.add("vibrating");
+    await sleep(600);
+    activeSprite.classList.remove("vibrating");
+  } else {
+    activeSprite.classList.add("attacking");
+    await sleep(450);
+    activeSprite.classList.remove("attacking");
+  }
 
   await playEvents(R.events);
   refreshBars();
