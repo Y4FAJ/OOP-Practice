@@ -38,12 +38,13 @@ python3 -m http.server 8000
 
 - **Burn**: lose 3 extra HP at the start of your own turn and whenever you are attacked, for the remaining turns.
 - **Curse**: lose 4 extra HP at the start of your own turn and whenever you are attacked, for the remaining turns.
-- **Petrify**: 2/3 chance your attack fails while petrified (ticks down when you attack).
+- **Petrify**: 2/4 chance your attack fails while petrified (ticks down when you attack).
 
 ### Other rules
 
 - **Heal** restores half of your current HP, capped at 100.
 - A fighter at 0 HP is defeated and their turn is skipped automatically; the run continues with the remaining fighters.
+- When only one fighter is left standing, a victory screen declares the winner, then takes you to the save / new run page.
 - **End Run** shows everyone's final stats and lets you save them. Saved runs are stored in your browser (localStorage) and can be loaded from the title screen — the web equivalent of the original `fighters.json` save file.
 
 ## Files

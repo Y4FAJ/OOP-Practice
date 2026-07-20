@@ -83,9 +83,9 @@ class Fighter {
     }
   }
 
-  /* 2/3 chance that petrification stops the attack (buffed from 1/2) */
+  /* 2/4 chance that petrification stops the attack */
   petrifyBlocks() {
-    return randrange(1, 4) <= 2;
+    return randrange(0, 2) === 1;
   }
 }
 
@@ -486,25 +486,17 @@ async function onTargetChosen(name) {
     attacker.attack(target, R);
   }
 
-  // --- playback ---
-  const blocked = R.events[0] && R.events[0].type === "msg" && R.events[0].text.includes("couldn't attack");
-  if (blocked) {
-    // Petrify stopped the attack: vibrate on the spot instead of lunging
-    activeSprite.classList.add("vibrating");
-    popText(el("active-sprite-wrap"), "MISS", "status-pop");
-    await sleep(600);
-    activeSprite.classList.remove("vibrating");
-  } else {
-    activeSprite.classList.add("attacking");
-    await sleep(450);
-    activeSprite.classList.remove("attacking");
-  }
+  // --- playback: lunge, then one event at a time ---
+  activeSprite.classList.add("attacking");
+  await sleep(450);
+  activeSprite.classList.remove("attacking");
 
   await playEvents(R.events);
   refreshBars();
 
   await sleep(END_PAUSE_MS);
   busy = false;
+  if (checkVictory()) return;
   nextTurn();
 }
 
@@ -579,6 +571,20 @@ async function startOfTurnEffects() {
   busy = false;
 }
 
+/* If only one fighter is left standing, show the victory screen and
+   return true (the game ends there). */
+function checkVictory() {
+  const alive = catalog.filter((f) => f.health > 0);
+  if (alive.length !== 1) return false;
+  const winner = alive[0];
+  battleScreen.hidden = true;
+  el("win-sprite").src = SPRITES[winner.name].front;
+  el("win-sprite").alt = winner.name;
+  el("win-text").textContent = `${winner.name} is the last one standing and wins the battle!`;
+  el("win-screen").hidden = false;
+  return true;
+}
+
 async function nextTurn() {
   // Skip defeated fighters entirely (guard avoids an infinite loop if
   // somehow everyone is at 0 HP).
@@ -588,7 +594,8 @@ async function nextTurn() {
     hops++;
   } while (catalog[turnIndex].health === 0 && hops < catalog.length);
   renderTurn();
-  await startOfTurnEffects();
+  await startOfTurnEffects(); // burn/curse can defeat the incoming fighter
+  if (checkVictory()) return;
   setMessage(turnPrompt());
 }
 
@@ -632,6 +639,7 @@ function loadRun() {
 
 function showEndScreen() {
   battleScreen.hidden = true;
+  el("win-screen").hidden = true;
   endScreen.hidden = false;
   const tbody = el("end-stats-table").querySelector("tbody");
   tbody.innerHTML = catalog
@@ -674,6 +682,8 @@ btnEnd.addEventListener("click", () => {
   if (busy) return;
   showEndScreen();
 });
+
+el("btn-win-continue").addEventListener("click", showEndScreen);
 
 el("btn-new-run").addEventListener("click", () => {
   startBattle();
