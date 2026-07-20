@@ -146,8 +146,8 @@ class Mage extends Fighter {
     R.hit(enemy, this.attack_power);
     R.log(`${this.name} spoke 1 meter, 1 second into the Medusa and threw it at ${enemy.name}`);
     if (enemy.petrified === 0) {
-      const amount = randrange(0, 4); // 3/4 chance of being petrified
-      if (amount > 0) {
+      if (randrange(0, 2) === 1) { // 2/4 chance of being petrified
+        const amount = randrange(1, 4); // for 1-3 turns
         enemy.petrified = amount;
         R.log(`${enemy.name} is partially petrified for ${amount} turns!`);
       }
@@ -486,15 +486,18 @@ async function onTargetChosen(name) {
     attacker.attack(target, R);
   }
 
-  // --- playback: lunge, then one event at a time ---
-  activeSprite.classList.add("attacking");
-  await sleep(450);
-  activeSprite.classList.remove("attacking");
-
-  const hadHits = R.events.some((e) => e.type === "hit");
-  if (!hadHits) {
-    const slot = [...enemyRow.children].find((s) => s.dataset.name === name);
-    if (slot) popText(slot, "MISS", "status-pop");
+  // --- playback ---
+  const blocked = R.events[0] && R.events[0].type === "msg" && R.events[0].text.includes("couldn't attack");
+  if (blocked) {
+    // Petrify stopped the attack: vibrate on the spot instead of lunging
+    activeSprite.classList.add("vibrating");
+    popText(el("active-sprite-wrap"), "MISS", "status-pop");
+    await sleep(600);
+    activeSprite.classList.remove("vibrating");
+  } else {
+    activeSprite.classList.add("attacking");
+    await sleep(450);
+    activeSprite.classList.remove("attacking");
   }
 
   await playEvents(R.events);
@@ -577,7 +580,13 @@ async function startOfTurnEffects() {
 }
 
 async function nextTurn() {
-  turnIndex = (turnIndex + 1) % catalog.length;
+  // Skip defeated fighters entirely (guard avoids an infinite loop if
+  // somehow everyone is at 0 HP).
+  let hops = 0;
+  do {
+    turnIndex = (turnIndex + 1) % catalog.length;
+    hops++;
+  } while (catalog[turnIndex].health === 0 && hops < catalog.length);
   renderTurn();
   await startOfTurnEffects();
   setMessage(turnPrompt());

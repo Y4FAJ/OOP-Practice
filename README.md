@@ -29,7 +29,7 @@ python3 -m http.server 8000
 | Fighter | Class | HP | Attack | Move |
 |---|---|---|---|---|
 | Luffy | Brawler | 100 | 35 | Red Hawk — 2/3 chance to burn (1–2 turns) |
-| Senku | Mage | 100 | 30 | Medusa — 3/4 chance to petrify (1–3 turns) |
+| Senku | Mage | 100 | 30 | Medusa — 2/4 chance to petrify (1–3 turns) |
 | Asta | Swordsman | 100 | 22 | Slash — hits 1–2 times |
 | Thorfinn | Swordsman | 100 | 20 | Slash — hits 1–2 times |
 | Rimuru | Mage | 100 | 36 | Megiddo — 3/4 chance to curse (1–3 turns) |
@@ -43,7 +43,7 @@ python3 -m http.server 8000
 ### Other rules
 
 - **Heal** restores half of your current HP, capped at 100.
-- A fighter at 0 HP is defeated and skips their action, but the run continues.
+- A fighter at 0 HP is defeated and their turn is skipped automatically; the run continues with the remaining fighters.
 - **End Run** shows everyone's final stats and lets you save them. Saved runs are stored in your browser (localStorage) and can be loaded from the title screen — the web equivalent of the original `fighters.json` save file.
 
 ## Files

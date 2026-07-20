@@ -375,6 +375,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 .hit { animation: hit-shake .45s ease; }
 
+@keyframes vibrate {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 1px); }
+  50% { transform: translate(3px, -1px); }
+  75% { transform: translate(-3px, -1px); }
+}
+.vibrating { animation: vibrate .12s linear 5; }
+
 @keyframes hit-flash { 0%, 100% { filter: none; } 50% { filter: brightness(2.4) saturate(.4); } }
 .flash { animation: hit-flash .3s ease 2; }
 
